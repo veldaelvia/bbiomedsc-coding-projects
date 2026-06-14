@@ -1,0 +1,122 @@
+---
+title: "AT4 Velda"
+author: "Velda Elvia"
+date: "2025-11-05"
+output: html_document
+---
+
+```{r, echo=TRUE}
+Clearhead_ori <- read.csv("ClearHeadDataBase_tblClearHead_RawDataExtract_StudyEnd2025.csv")
+```
+
+Randomised participant data frame
+```{r, echo=TRUE}
+#prevent overwrite
+Clearhead <- Clearhead_ori
+```
+
+```{r, echo=TRUE}
+Randomised <- Clearhead[which(Clearhead$VisitTime=="Randomisation"), c("SubjectID", "VisitTime")]
+Randomised$Randomised <- 1
+Randomised <- Randomised[,c("SubjectID", "Randomised")]
+Clearhead <- merge(Clearhead, Randomised, by="SubjectID", all=TRUE)
+Deviation <- Clearhead[which(Clearhead$VisitTime=="Screening"),c("SubjectID", "VisitDate","VisitTime","Consent", 
+                                                                 "DOB", "SBP1", "DBP1", "katz1_walking", 
+                                                                 "katz2_bathing","katz3_chair","katz4_toilet", 
+                                                                 "katz5_dressing", "katz6_feeding", "Randomised")]
+```
+
+Eligibility criteria
+```{r, echo=TRUE}
+# Prepare Age variable
+Deviation$VisitDate <- as.Date(Deviation$VisitDate, format="%Y-%m-%d")
+Deviation$DOB <- as.Date(Deviation$DOB, format = "%d/%m/%Y")
+Deviation$Age <- as.numeric((Deviation$VisitDate - Deviation$DOB)/365.25)
+
+# Age below lower limit
+Deviation$Agelower <- 0
+Deviation$Agelower[which(Deviation$Age<18)] <- 1
+xtabs(~Agelower + Randomised, data=Deviation, exclude=NULL, na.action=na.pass)
+
+# Age below upper limit
+Deviation$Ageupper <- 0
+Deviation$Ageupper[which(Deviation$Age>70)] <- 1
+xtabs(~Ageupper + Randomised, data=Deviation, exclude=NULL, na.action=na.pass)
+```
+
+```{r, echo=TRUE}
+# High SBP
+Deviation$HighSBP <- 0
+Deviation$HighSBP[which(Deviation$SBP1>179)] <- 1 
+xtabs(~HighSBP + Randomised, data=Deviation, exclude=NULL, na.action=na.pass)
+
+# High DBP
+Deviation$HighDBP <- 0
+Deviation$HighDBP[which(Deviation$DBP1>104)] <- 1 
+xtabs(~HighDBP + Randomised, data=Deviation, exclude=NULL, na.action=na.pass)
+```
+
+```{r, echo=TRUE}
+# Both High SBP and High DBP
+addmargins(xtabs(~HighDBP +HighSBP+ Randomised, data=Deviation, exclude=NULL, na.action=na.pass))
+```
+
+```{r, echo=TRUE}
+Deviation$NoConsent <- 0
+Deviation$NoConsent[which(Deviation$Consent != 1)] <- 1
+xtabs(~NoConsent + Randomised, data = Deviation, exclude = NULL, na.action = na.pass)
+```
+
+```{r, echo=TRUE}
+Deviation$Functional <- 0
+Deviation$Functional[which(Deviation$katz1_walking==4 | Deviation$katz1_walking==5)] <- 1
+Deviation$Functional[which(Deviation$katz2_bathing==4 | Deviation$katz2_bathing==5)] <- 1
+Deviation$Functional[which(Deviation$katz3_chair==4 | Deviation$katz3_chair==5)] <- 1
+Deviation$Functional[which(Deviation$katz4_toilet==4 | Deviation$katz4_toilet==5)] <- 1
+Deviation$Functional[which(Deviation$katz5_dressing==4 | Deviation$katz5_dressing==5)] <- 1
+Deviation$Functional[which(Deviation$katz6_feeding==4 | Deviation$katz6_feeding==5)] <- 1
+
+xtabs(~Functional + Randomised, data=Deviation, exclude=NULL, na.action=na.pass)
+```
+
+```{r, echo=TRUE}
+# Any deviation
+Deviation$Deviation <- 0
+Deviation$Deviation[which(Deviation$Agelower==1)] <- 1
+Deviation$Deviation[which(Deviation$Ageupper==1)] <- 1
+Deviation$Deviation[which(Deviation$HighSBP==1)] <- 1
+Deviation$Deviation[which(Deviation$HighDBP==1)] <- 1
+Deviation$Deviation[which(Deviation$NoConsent==1)] <- 1
+Deviation$Deviation[which(Deviation$Functional==1)] <- 1
+
+addmargins(xtabs(~Deviation + Randomised, data=Deviation, exclude=NULL, na.action=na.pass))
+#Percentage
+round(prop.table(xtabs(~Deviation + Randomised, data=Deviation, exclude=NULL, na.action=na.pass), margin=2)*100, 1)
+```
+
+```{r, echo=TRUE}
+# Make a copy of the data set called 'Clearhead' so that you don't overwrite the original data.
+Clearhead <- Clearhead_ori
+```
+
+```{r, echo=TRUE}
+# Refer to the Week 7 answers if you are unsure of the code
+Randomised <- Clearhead[which(Clearhead$VisitTime=="Randomisation"), c("SubjectID", "VisitTime")]
+Randomised$Randomised <- 1
+Randomised <- Randomised[,c("SubjectID", "Randomised")]
+Clearhead <- merge(Clearhead, Randomised, by="SubjectID", all=TRUE)
+
+consort <- Clearhead[which(Clearhead$VisitTime=="InvitationLetter" | Clearhead$VisitTime=="Screening" |
+                           Clearhead$VisitTime=="Randomisation"),]
+xtabs(~VisitTime, data=consort, exclude=NULL, na.action=na.pass)
+```
+
+```{r, echo=TRUE}
+DevOnly <- Deviation[,c("SubjectID", "Deviation")]
+consort <- merge(consort, DevOnly, by="SubjectID", all=TRUE)
+
+addmargins(xtabs(~VisitTime + Deviation, data=consort, exclude=NULL, na.action=na.pass))
+                 
+addmargins(xtabs(~Randomised + Deviation, data=consort[which(consort$VisitTime=="Screening"),]
+                       , exclude=NULL, na.action=na.pass))
+```
