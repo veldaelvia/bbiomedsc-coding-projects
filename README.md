@@ -3,7 +3,7 @@ Introductory Python and R projects for bioinformatics and data analysis.
 
 # Undergraduate Bioinformatics & Data Analysis Projects
 
-Welcome to my portfolio! I am Velda, a final-year BBiomedSc (biomedical science) student at Monash University. This repository contains a selection of introductory Python and R projects I have completed through university coursework and self-directed learning. 
+Welcome to my portfolio! I am Velda, a final-year BBiomedSc (biomedical science) student at Monash University. I am interested in pursuing further studies in **bioinformatics**. This repository contains a selection of introductory Python and R projects I have completed through university coursework and self-directed learning. 
 
 ## 🧬 Python Projects
 
